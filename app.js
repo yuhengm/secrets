@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
 const _ = require("lodash");
+const encrypt = require("mongoose-encryption");
 
 const app = express();
 
@@ -15,12 +16,19 @@ mongoose.connect("mongodb://127.0.0.1:27017/secretUserDB", {
   useNewUrlParser: true,
 });
 
-/* Create user database for Secret website */
+/* Create encrypted user database for Secret website */
 
-const secretUserSchema = {
+const secretUserSchema = new mongoose.Schema({
   email: String,
   password: String,
-};
+});
+// encrypt password section first
+const secret = "Thisisourlittlesecret";
+secretUserSchema.plugin(encrypt, {
+  secret: secret,
+  encryptedFields: ["password"]
+});
+// and then create new model
 const SecretUser = new mongoose.model("SecretUser", secretUserSchema);
 
 /* Set up home page */

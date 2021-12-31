@@ -5,6 +5,7 @@
     "express": "^4.17.2",
     "lodash": "^4.17.21",
     "mongoose": "^6.1.4",
+    "mongoose-encryption": "^2.1.2",
     "node": "^17.3.0"
   },
   "name": "secrets",
