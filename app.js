@@ -3,11 +3,13 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
+const findOrCreate = require("mongoose-findorcreate");
 
 /* Authentication and password security */
 const session = require("express-session");
 const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
+const GoogleStrategy = require("passport-google-oauth2").Strategy;
 
 const app = express();
 
@@ -34,18 +36,44 @@ mongoose.connect("mongodb://127.0.0.1:27017/secretUserDB", {
 
 const secretUserSchema = new mongoose.Schema({
 	email: String,
-	password: String,
+    password: String,
+    googleId: String
 });
 
 // add passportLocalMongoose to schema
 secretUserSchema.plugin(passportLocalMongoose);
+secretUserSchema.plugin(findOrCreate);
 
 const SecretUser = new mongoose.model("SecretUser", secretUserSchema);
 
 // use passportLocalMongoose in new model
 passport.use(SecretUser.createStrategy());
+passport.serializeUser(function (user, done) {
+	done(null, user);
+});
+passport.deserializeUser(function (user, done) {
+	done(null, user);
+});
 passport.serializeUser(SecretUser.serializeUser());
 passport.deserializeUser(SecretUser.deserializeUser());
+passport.use(
+	new GoogleStrategy(
+		{
+			clientID: process.env.GOOGLE_CLIENT_ID,
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+			callbackURL: "http://localhost:3000/auth/google/secrets",
+			passReqToCallback: true,
+		},
+		function (request, accessToken, refreshToken, profile, done) {
+            SecretUser.findOrCreate(
+				{ googleId: profile.id },
+				function (err, user) {
+					return done(err, user);
+				}
+			);
+		}
+	)
+);
 
 /* Set up home page */
 
@@ -107,6 +135,24 @@ app.route("/register")
 			}
 		);
 	});
+
+/* Set up Google OAuth */
+
+app.get(
+	"/auth/google",
+	passport.authenticate("google", { scope: ["email", "profile"] })
+);
+
+app.get(
+	"/auth/google/secrets",
+	passport.authenticate("google", {
+		successRedirect: "/secrets",
+		failureRedirect: "/login",
+	}),
+	function (req, res) {
+		res.redirect("/");
+	}
+);
 
 /* Set up submit page */
 
