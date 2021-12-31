@@ -39,7 +39,7 @@ app
   .post(function (req, res) {
     const email = req.body.username;
     const password = req.body.password;
-    User.findOnd({ email: email }, function (err, foundUser) {
+    SecretUser.findOne({ email: email }, function (err, foundUser) {
       if (err) {
         console.log(err);
       } else {
