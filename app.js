@@ -5,6 +5,7 @@ const ejs = require("ejs");
 const mongoose = require("mongoose");
 const _ = require("lodash");
 const encrypt = require("mongoose-encryption");
+const md5 = require("md5");
 
 const app = express();
 
@@ -47,7 +48,8 @@ app
   })
   .post(function (req, res) {
     const email = req.body.username;
-    const password = req.body.password;
+    // hash function to turn user password into encoded form
+    const password = md5(req.body.password);
     SecretUser.findOne({ email: email }, function (err, foundUser) {
       if (err) {
         console.log(err);
@@ -71,7 +73,8 @@ app
   .post(function (req, res) {
     const newUser = new SecretUser({
       email: req.body.username,
-      password: req.body.password,
+      // hash function to store user password
+      password: md5(req.body.password),
     });
     newUser.save(function (err) {
       if (!err) {
